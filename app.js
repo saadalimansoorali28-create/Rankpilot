@@ -1,29 +1,215 @@
-const modal=document.getElementById("tool-modal"),form=document.getElementById("tool-form"),result=document.getElementById("tool-result"),title=document.getElementById("modal-title"),copy=document.getElementById("modal-copy");
-document.getElementById("year").textContent=new Date().getFullYear();
-const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-const clean=s=>String(s).trim().replace(/\s+/g," ");
-const words=s=>(String(s).toLowerCase().match(/[a-z0-9]+(?:['’-][a-z0-9]+)*/g)||[]);
-const configs={
- keywords:{title:"Keyword Research",copy:"Generate practical keyword ideas from a seed. This starter tool does not provide live search volume, CPC, or competition data.",html:'<label>Seed keyword</label><div class="form-row"><input class="input" id="tool-input" placeholder="e.g. solar panel price"><button class="primary-small" id="run-tool">Research</button></div>'},
- youtube:{title:"YouTube SEO Planner",copy:"Create natural, viewer-focused video titles, a ready-to-edit description, and relevant keyword phrases. Suggestions are generated from your topic; they are not live YouTube search-volume or ranking data.",html:'<label>Video topic</label><div class="form-row"><input class="input" id="tool-input" placeholder="e.g. solar panel prices in Pakistan"><button class="primary-small" id="run-tool">Create plan</button></div>'},
- audit:{title:"Website SEO Audit",copy:"Paste page HTML for a local on-page check. A URL alone cannot be crawled reliably from this browser tool.",html:'<label>Page URL (optional)</label><input class="input" id="tool-input" placeholder="https://example.com"><label style="display:block;margin-top:14px">Page HTML</label><textarea class="input" id="tool-text" rows="9" placeholder="Paste the page HTML here..."></textarea><div class="form-row"><button class="primary-small" id="run-tool">Audit</button></div>'},
- meta:{title:"Meta Tag Generator",copy:"Generate editable SEO and social meta tags for a page.",html:'<label>Page topic</label><input class="input" id="tool-input" placeholder="Page topic"><label style="display:block;margin-top:14px">Primary keyword</label><input class="input" id="tool-keyword" placeholder="Primary keyword"><div class="form-row"><button class="primary-small" id="run-tool">Generate</button></div>'},
- density:{title:"Keyword Density",copy:"Measure exact phrase usage in your content.",html:'<textarea class="input" id="tool-text" rows="9" placeholder="Paste your content here..."></textarea><div class="form-row"><input class="input" id="tool-input" placeholder="Target keyword"><button class="primary-small" id="run-tool">Analyze</button></div>'},
- sitemap:{title:"Sitemap Helper",copy:"Generate a basic XML sitemap from your URLs.",html:'<textarea class="input" id="tool-text" rows="6" placeholder="One URL per line"></textarea><div class="form-row"><button class="primary-small" id="run-tool">Generate</button></div>'},
- bilibili:{title:"Bilibili Video Downloader",copy:"Paste a public Bilibili video URL. RankPilot will ask its server-side downloader for available formats. Only source-provided streams are used; embedded watermarks are not removed.",html:'<label>Bilibili video URL</label><div class="form-row"><input class="input" id="tool-input" placeholder="https://www.bilibili.com/video/BV..."><button class="primary-small" id="run-tool">Get video</button></div><p style="font-size:12px;color:#718095;margin-top:12px">Downloads depend on the source, region, authentication and server availability.</p>'}
+const modal = document.getElementById("tool-modal");
+const form = document.getElementById("tool-form");
+const result = document.getElementById("tool-result");
+const title = document.getElementById("modal-title");
+const copy = document.getElementById("modal-copy");
+
+if (document.getElementById("year")) {
+  document.getElementById("year").textContent = new Date().getFullYear();
+}
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[m]));
+
+const configs = {
+  keywords: {
+    title: "Keyword Research",
+    copy: "Generate practical keyword ideas from a seed keyword.",
+    html: '<label>Seed keyword</label><div class="form-row"><input class="input" id="tool-input" placeholder="e.g. solar panel price"><button class="primary-small" id="run-tool">Research</button></div>'
+  },
+  youtube: {
+    title: "YouTube SEO Planner",
+    copy: "Create title, description and keyword ideas for your video.",
+    html: '<label>Video topic</label><div class="form-row"><input class="input" id="tool-input" placeholder="e.g. solar panel prices in Pakistan"><button class="primary-small" id="run-tool">Create plan</button></div>'
+  },
+  audit: {
+    title: "Website SEO Audit",
+    copy: "Paste page HTML for a local on-page SEO check.",
+    html: '<label>Page HTML</label><textarea class="input" id="tool-text" rows="9" placeholder="Paste page HTML here..."></textarea><div class="form-row"><button class="primary-small" id="run-tool">Audit</button></div>'
+  },
+  meta: {
+    title: "Meta Tag Generator",
+    copy: "Generate editable SEO and social meta tags.",
+    html: '<label>Page topic</label><input class="input" id="tool-input" placeholder="Page topic"><label style="display:block;margin-top:14px">Primary keyword</label><input class="input" id="tool-keyword" placeholder="Primary keyword"><div class="form-row"><button class="primary-small" id="run-tool">Generate</button></div>'
+  },
+  density: {
+    title: "Keyword Density",
+    copy: "Measure exact phrase usage in your content.",
+    html: '<textarea class="input" id="tool-text" rows="9" placeholder="Paste your content here..."></textarea><div class="form-row"><input class="input" id="tool-input" placeholder="Target keyword"><button class="primary-small" id="run-tool">Analyze</button></div>'
+  },
+  sitemap: {
+    title: "Sitemap Helper",
+    copy: "Generate a basic XML sitemap from your URLs.",
+    html: '<textarea class="input" id="tool-text" rows="6" placeholder="One URL per line"></textarea><div class="form-row"><button class="primary-small" id="run-tool">Generate</button></div>'
+  },
+  bilibili: {
+    title: "Bilibili Video Downloader",
+    copy: "Paste a public Bilibili video URL to check available source formats.",
+    html: '<label>Bilibili video URL</label><div class="form-row"><input class="input" id="tool-input" placeholder="https://www.bilibili.com/video/BV..."><button class="primary-small" id="run-tool">Get video</button></div>'
+  }
 };
-function openTool(key){const c=configs[key];if(!c)return;title.textContent=c.title;copy.textContent=c.copy;form.innerHTML=c.html;result.hidden=true;result.innerHTML="";modal.classList.add("open");modal.setAttribute("aria-hidden","false");const btn=document.getElementById("run-tool");if(btn)btn.onclick=()=>runTool(key)}
-function copyButton(text,label){return '<button type="button" class="primary-small copy-result" data-copy="'+esc(text)+'">'+label+'</button>'}
-async function runTool(key){const input=clean(document.getElementById("tool-input")?.value||""),textInput=document.getElementById("tool-text")?.value||"";let html="";
- if(key==="keywords"){if(!input)return showWarn("Enter a seed keyword.");const base=input.toLowerCase(),mods=["price","cost","in Pakistan","near me","for home","for 5 marla house","for 10 marla house","for 1 kanal house","installation cost","with battery","without battery","latest rates","buying guide","comparison","benefits","maintenance","for beginners","how to choose"],ideas=[...mods.map(m=>base+" "+m),"how much does "+base+" cost?","what affects "+base+"?","is "+base+" worth it?"];const unique=[...new Set(ideas)].slice(0,30);html='<h4>Keyword ideas</h4><div class="keyword-table"><div class="kw-head"><span>Keyword</span><span>Type</span></div>'+unique.map(x=>'<div class="kw-row"><span>'+esc(x)+'</span><b>Idea</b></div>').join("")+'</div><p class="good">These are generated ideas, not verified search metrics. Check wording and local relevance before publishing.</p>'}
- if(key==="youtube"){if(!input)return showWarn("Enter a video topic.");const topic=input.replace(/[.!?]+$/,""),lower=topic.toLowerCase(),sentence=topic.charAt(0).toUpperCase()+topic.slice(1);const titles=[sentence+" in Pakistan: Latest Prices & What to Know",sentence+": A Practical Buying Guide",sentence+" Explained: Costs, Options and Tips"];const description='Planning to '+lower+'? In this video, we walk through the key details, what can affect the price, and what to check before making a decision.\n\nYou’ll learn:\n• The main factors that influence '+lower+'\n• What to compare before choosing\n• Practical tips and common questions\n\nPrices and availability can change, so confirm current rates with local sellers before you buy.\n\nIf this guide helps, leave your question in the comments and subscribe for more practical explainers.';const keywords=[lower,lower+" in Pakistan",lower+" latest price",lower+" price guide",lower+" cost",lower+" buying guide",lower+" comparison",lower+" explained"];html='<h4>Video content plan</h4><p><strong>Main topic</strong><br>'+esc(sentence)+'</p><h4>Title options</h4>'+titles.map((t,i)=>'<div class="kw-row" style="display:block;margin:10px 0"><p><strong>'+esc(t)+'</strong></p>'+copyButton(t,"Copy title")+'</div>').join("")+'<h4>Description (edit details before publishing)</h4><pre>'+esc(description)+'</pre>'+copyButton(description,"Copy description")+'<h4>Keyword phrases</h4><div class="keyword-table">'+keywords.map(k=>'<div class="kw-row"><span>'+esc(k)+'</span>'+copyButton(k,"Copy")+'</div>').join("")+'</div>'+copyButton(keywords.join(", "),"Copy all keywords")+'<p class="good">Keep only phrases that accurately match your video. Add verified current prices, location, product details, and sources where relevant.</p>'}
- if(key==="audit"){if(!textInput.trim())return showWarn("Paste the page HTML so the browser can audit it.");const doc=new DOMParser().parseFromString(textInput,"text/html"),t=doc.querySelector("title")?.textContent.trim()||"",d=doc.querySelector('meta[name="description"]')?.content||"",c=doc.querySelector('link[rel="canonical"]')?.href||"",h=doc.querySelectorAll("h1").length,v=!!doc.querySelector('meta[name="viewport"]'),imgs=[...doc.querySelectorAll("img")],missing=imgs.filter(i=>!i.getAttribute("alt")?.trim()).length;const checks=[["Title tag",!!t,t||"Missing"],["Meta description",!!d,d?d.length+" characters":"Missing"],["Canonical",!!c,c||"Missing"],["One H1",h===1,h+" H1 tag(s)"],["Viewport",v,v?"Present":"Missing"],["Image alt text",missing===0,missing+" image(s) missing alt"]];html='<h4>On-page audit</h4><ul class="check-list">'+checks.map(x=>'<li><strong>'+x[0]+':</strong> <span class="'+(x[1]?"good":"warn")+'">'+(x[1]?"✓ ":"⚠ ")+esc(x[2])+'</span></li>').join("")+'</ul><p class="good">This check runs locally in your browser.</p>'}
- if(key==="meta"){if(!input)return showWarn("Enter a page topic.");const kw=clean(document.getElementById("tool-keyword")?.value||input),desc="Explore "+input+" with clear explanations, practical tips, and useful examples from RankPilot.";const tags='<title>'+input+' | RankPilot</title>\n<meta name="description" content="'+desc+'">\n<meta name="robots" content="index,follow">\n<link rel="canonical" href="https://example.com/page">\n<meta property="og:title" content="'+input+' | RankPilot">\n<meta property="og:description" content="'+desc+'">';html='<h4>Generated tags</h4><pre>'+esc(tags)+'</pre>'+copyButton(tags,"Copy meta tags")+'<p><strong>Primary keyword:</strong> '+esc(kw)+'</p><p class="good">Replace the example canonical URL before publishing.</p>'}
- if(key==="density"){const kw=input.toLowerCase();if(!kw)return showWarn("Enter a target keyword.");const ws=words(textInput),target=words(kw);if(!ws.length)return showWarn("Paste some content first.");let count=0;for(let i=0;i<=ws.length-target.length;i++)if(target.every((w,j)=>ws[i+j]===w))count++;const density=(count*target.length/ws.length*100).toFixed(2);html='<h4>Result</h4><p><strong>'+ws.length+'</strong> words · <strong>'+count+'</strong> exact phrase occurrences · approximate density <strong>'+density+'%</strong></p><p>'+(Number(density)>3?'<span class="warn">Review repetition for natural language.</span>':'<span class="good">No obvious density warning.</span>')+'</p><p class="good">There is no universal ideal keyword density.</p>'}
- if(key==="bilibili"){if(!/^https?:\/\/(www\.)?bilibili\.com\//i.test(input))return showWarn("Enter a valid Bilibili video URL.");const apiBase=(window.RANKPILOT_API_BASE||"/api").replace(/\/$/,"");const btn=document.getElementById("run-tool");btn.disabled=true;btn.textContent="Parsing...";result.hidden=false;result.innerHTML="<p>Getting available video formats…</p>";try{const r=await fetch(apiBase+"/bilibili/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:input})});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||"The downloader could not parse this video.");const formats=Array.isArray(data.formats)?data.formats:[];if(!formats.length)throw new Error("No downloadable format was returned.");html="<h4>"+esc(data.title||"Bilibili video")+"</h4><p class=\"good\">Available source formats:</p><div class=\"keyword-table\">"+formats.map(f=>"<div class=\"kw-row\"><span>"+esc(f.label||"Video")+"</span><a class=\"primary-small\" href=\""+esc(f.url)+"\" target=\"_blank\" rel=\"noopener\">Download</a></div>").join("")+"</div><p class=\"good\">RankPilot does not remove embedded watermarks. A watermark-free result is shown only when the source provides that stream.</p>";result.innerHTML=html}catch(e){showWarn(e.message||"Unable to connect to the Bilibili downloader.")}finally{btn.disabled=false;btn.textContent="Get video"}}\n if(key==="sitemap"){const urls=textInput.split(/\r?\n/).map(clean).filter(Boolean),valid=urls.filter(u=>/^https?:\/\//i.test(u));if(!valid.length)return showWarn("Enter at least one valid http or https URL.");const xml='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+valid.map(u=>'  <url><loc>'+u.replace(/&/g,"&amp;")+'</loc></url>').join("\n")+'\n</urlset>';html='<h4>XML sitemap</h4><pre>'+esc(xml)+'</pre>'+copyButton(xml,"Copy XML")+'<p class="good">'+valid.length+' URL(s) included.</p>'}
- result.hidden=false;result.innerHTML=html}
-async function copyText(text,button){try{await navigator.clipboard.writeText(text)}catch(e){const area=document.createElement("textarea");area.value=text;area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();document.execCommand("copy");area.remove()}const old=button.textContent;button.textContent="Copied!";setTimeout(()=>button.textContent=old,1400)}
-result.addEventListener("click",e=>{const b=e.target.closest("[data-copy]");if(b)copyText(b.getAttribute("data-copy"),b)});
-function showWarn(msg){result.hidden=false;result.innerHTML="<p class='warn'>"+esc(msg)+"</p>"}
-document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>openTool(b.dataset.tool)));
-document.querySelector(".modal-close").onclick=()=>{modal.classList.remove("open");modal.setAttribute("aria-hidden","true")};document.querySelector(".modal-backdrop").onclick=()=>{modal.classList.remove("open");modal.setAttribute("aria-hidden","true")};document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.remove("open")});document.querySelector(".menu-toggle").onclick=()=>{const n=document.querySelector(".nav");n.classList.toggle("open");document.querySelector(".menu-toggle").setAttribute("aria-expanded",n.classList.contains("open"))};document.querySelectorAll(".nav a").forEach(a=>a.onclick=()=>document.querySelector(".nav").classList.remove("open"));
+
+function closeTool() {
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function showWarn(message) {
+  result.hidden = false;
+  result.innerHTML = '<p class="warn">' + esc(message) + '</p>';
+}
+
+function openTool(key) {
+  const cfg = configs[key];
+  if (!cfg) return;
+  title.textContent = cfg.title;
+  copy.textContent = cfg.copy;
+  form.innerHTML = cfg.html;
+  result.hidden = true;
+  result.innerHTML = "";
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  const button = document.getElementById("run-tool");
+  if (button) button.addEventListener("click", () => runTool(key));
+}
+
+async function runTool(key) {
+  const inputEl = document.getElementById("tool-input");
+  const textEl = document.getElementById("tool-text");
+  const input = inputEl ? inputEl.value.trim() : "";
+  const text = textEl ? textEl.value : "";
+
+  if (key === "keywords") {
+    if (!input) return showWarn("Enter a seed keyword.");
+    const mods = ["price","cost","in Pakistan","near me","for home","installation cost","with battery","without battery","latest rates","buying guide","comparison","benefits","maintenance","for beginners"];
+    const ideas = [...mods.map(m => input + " " + m), "how much does " + input + " cost?", "what affects " + input + "?"];
+    result.innerHTML = "<h4>Keyword ideas</h4><div class='keyword-table'>" +
+      ideas.map(x => "<div class='kw-row'><span>" + esc(x) + "</span><b>Idea</b></div>").join("") +
+      "</div><p class='good'>These are generated ideas, not live search metrics.</p>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "youtube") {
+    if (!input) return showWarn("Enter a video topic.");
+    const topic = input.replace(/[.!?]+$/, "");
+    const titles = [
+      topic + " in Pakistan: Latest Prices & What to Know",
+      topic + ": A Practical Buying Guide",
+      topic + " Explained: Costs, Options and Tips"
+    ];
+    const keywords = [topic, topic + " in Pakistan", topic + " latest price", topic + " price guide", topic + " cost", topic + " buying guide"];
+    const description = "In this video, we cover " + topic + ", key factors to compare, practical tips, and common questions. Verify current prices and availability before making a purchase.";
+    result.innerHTML = "<h4>Title options</h4>" +
+      titles.map(t => "<div class='kw-row'><span>" + esc(t) + "</span></div>").join("") +
+      "<h4>Description</h4><pre>" + esc(description) + "</pre>" +
+      "<h4>Keyword phrases</h4><div class='keyword-table'>" +
+      keywords.map(k => "<div class='kw-row'><span>" + esc(k) + "</span></div>").join("") +
+      "</div>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "audit") {
+    if (!text.trim()) return showWarn("Paste the page HTML first.");
+    const doc = new DOMParser().parseFromString(text, "text/html");
+    const checks = [
+      ["Title tag", !!doc.querySelector("title")],
+      ["Meta description", !!doc.querySelector('meta[name="description"]')],
+      ["Canonical", !!doc.querySelector('link[rel="canonical"]')],
+      ["One H1", doc.querySelectorAll("h1").length === 1],
+      ["Viewport", !!doc.querySelector('meta[name="viewport"]')]
+    ];
+    result.innerHTML = "<h4>On-page audit</h4><ul class='check-list'>" +
+      checks.map(c => "<li><strong>" + c[0] + ":</strong> <span class='" + (c[1] ? "good" : "warn") + "'>" + (c[1] ? "✓ Present" : "⚠ Missing") + "</span></li>").join("") +
+      "</ul>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "meta") {
+    if (!input) return showWarn("Enter a page topic.");
+    const keyword = (document.getElementById("tool-keyword") || {}).value || input;
+    const description = "Learn about " + input + " with practical information, useful tips, and clear explanations.";
+    const tags = '<title>' + input + ' | RankPilot</title>\n<meta name="description" content="' + description + '">\n<meta name="robots" content="index,follow">\n<meta property="og:title" content="' + input + ' | RankPilot">';
+    result.innerHTML = "<h4>Generated tags</h4><pre>" + esc(tags) + "</pre><p><strong>Primary keyword:</strong> " + esc(keyword) + "</p>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "density") {
+    if (!input) return showWarn("Enter a target keyword.");
+    if (!text.trim()) return showWarn("Paste your content first.");
+    const words = text.toLowerCase().match(/[a-z0-9]+(?:['’-][a-z0-9]+)*/g) || [];
+    const target = input.toLowerCase().match(/[a-z0-9]+/g) || [];
+    let count = 0;
+    for (let i = 0; i <= words.length - target.length; i++) {
+      if (target.every((w, j) => words[i + j] === w)) count++;
+    }
+    const density = words.length ? (count * target.length / words.length * 100).toFixed(2) : "0.00";
+    result.innerHTML = "<h4>Result</h4><p><strong>" + words.length + "</strong> words · <strong>" + count + "</strong> exact phrase occurrences · <strong>" + density + "%</strong> approximate density.</p>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "sitemap") {
+    const urls = text.split(/\r?\n/).map(x => x.trim()).filter(x => /^https?:\/\//i.test(x));
+    if (!urls.length) return showWarn("Enter at least one valid URL.");
+    const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls.map(u => "  <url><loc>" + u.replace(/&/g, "&amp;") + "</loc></url>").join("\n") +
+      "\n</urlset>";
+    result.innerHTML = "<h4>XML sitemap</h4><pre>" + esc(xml) + "</pre><p class='good'>" + urls.length + " URL(s) included.</p>";
+    result.hidden = false;
+    return;
+  }
+
+  if (key === "bilibili") {
+    if (!/^https?:\/\/(www\.)?bilibili\.com\//i.test(input)) return showWarn("Enter a valid Bilibili video URL.");
+    const apiBase = (window.RANKPILOT_API_BASE || "").replace(/\/$/, "");
+    if (!apiBase) return showWarn("Bilibili API is not configured.");
+    const button = document.getElementById("run-tool");
+    button.disabled = true;
+    button.textContent = "Parsing...";
+    result.hidden = false;
+    result.innerHTML = "<p>Getting available video formats...</p>";
+    try {
+      const response = await fetch(apiBase + "/bilibili/parse", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({url: input})
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "Downloader could not parse this video.");
+      const formats = Array.isArray(data.formats) ? data.formats : [];
+      if (!formats.length) throw new Error("No downloadable format was returned.");
+      result.innerHTML = "<h4>" + esc(data.title || "Bilibili video") + "</h4><p class='good'>Available source formats:</p><div class='keyword-table'>" +
+        formats.map(f => "<div class='kw-row'><span>" + esc(f.label || "Video") + "</span><a class='primary-small' href='" + esc(f.url) + "' target='_blank' rel='noopener'>Download</a></div>").join("") +
+        "</div>";
+    } catch (e) {
+      showWarn(e.message || "Unable to connect to the Bilibili downloader.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Get video";
+    }
+  }
+}
+
+document.querySelectorAll("[data-tool]").forEach(button => {
+  button.addEventListener("click", () => openTool(button.dataset.tool));
+});
+
+const closeButton = document.querySelector(".modal-close");
+const backdrop = document.querySelector(".modal-backdrop");
+if (closeButton) closeButton.addEventListener("click", closeTool);
+if (backdrop) backdrop.addEventListener("click", closeTool);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeTool(); });
+
+const menuToggle = document.querySelector(".menu-toggle");
+const nav = document.querySelector(".nav");
+if (menuToggle && nav) {
+  menuToggle.addEventListener("click", () => {
+    nav.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", nav.classList.contains("open"));
+  });
+}
